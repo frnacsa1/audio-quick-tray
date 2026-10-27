@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Audio QuickTray Demo</title>
+  <style>
+    :root {
+      --bg-color: #0d1117;
+      --card-bg: #161b22;
+      --border-color: #30363d;
+      --accent-color: #6b46c1;
+      --accent-hover: #805ad5;
+      --text-main: #c9d1d9;
+      --text-muted: #8b949e;
+      --success-color: #238636;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 15px;
+      overflow: hidden;
+    }
+
+    /* Modal Pop-up */
+    .popup-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 24px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      transition: all 0.3s ease;
+    }
+
+    .popup-card.hidden {
+      opacity: 0;
+      transform: scale(0.95);
+      pointer-events: none;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .header h2 {
+      font-size: 1.1rem;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .badge {
+      background-color: rgba(107, 70, 193, 0.2);
+      color: #b794f4;
+      font-size: 0.75rem;
+      padding: 4px 8px;
+      border-radius: 6px;
+      border: 1px solid var(--accent-color);
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    select {
+      width: 100%;
+      padding: 10px;
+      background-color: #0d1117;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      color: var(--text-main);
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    select:focus {
+      border-color: var(--accent-color);
+    }
+
+    .timer-info {
+      font-size: 0.8rem;
+      color: #e2e8f0;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 8px 12px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+    }
+
+    button {
+      flex: 1;
+      padding: 10px;
+      border-radius: 6px;
+      border: none;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-primary {
+      background-color: var(--accent-color);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--accent-hover);
+    }
+
+    .btn-secondary {
+      background-color: #21262d;
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      background-color: #30363d;
+    }
+
+    /* Simulazione Tray Area */
+    .tray-area {
+      position: fixed;
+      bottom: 12px;
+      right: 12px;
+      background: #161b22;
+      border: 1px solid var(--border-color);
+      padding: 8px 14px;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+
+    .tray-icon {
+      width: 24px;
+      height: 24px;
+      background: var(--accent-color);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 12px;
+      cursor: pointer;
+      box-shadow: 0 0 8px rgba(107, 70, 193, 0.6);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Pop-up Principale -->
+  <div class="popup-card" id="audioPopup">
+    <div class="header">
+      <h2>🔊 Selezione Audio</h2>
+      <span class="badge">QuickTray</span>
+    </div>
+
+    <div class="form-group">
+      <label for="inputDevice">🎤 Ingresso (Microfono):</label>
+      <select id="inputDevice">
+        <option>Microfono predefinito di sistema</option>
+        <option>Cuffie Bluetooth (Hands-Free)</option>
+        <option>Microfono USB Array</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="outputDevice">🎧 Uscita (Altoparlanti/Cuffie):</label>
+      <select id="outputDevice">
+        <option>Altoparlanti (Realtek High Definition)</option>
+        <option>Cuffie Stereo Bluetooth</option>
+        <option>Audio HDMI DisplayPort</option>
+      </select>
+    </div>
+
+    <div class="timer-info">
+      <span>Riduzione in tray tra: <b id="countdown">5</b>s</span>
+      <span style="color: var(--accent-color); cursor: pointer;" onclick="stopTimer()">[Blocca]</span>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn-primary" onclick="minimizeToTray()">Conferma e Riduci</button>
+      <button class="btn-secondary" onclick="stopTimer()">Pausa Timer</button>
+    </div>
+  </div>
+
+  <!-- Area Notifica / Tray simulata -->
+  <div class="tray-area">
+    <span>Barra di sistema:</span>
+    <div class="tray-icon" title="Clicca per riaprire il selettore audio" onclick="restorePopup()">🔊</div>
+  </div>
+
+  <script>
+    let seconds = 5;
+    let timerId = null;
+    const countdownEl = document.getElementById('countdown');
+    const popupEl = document.getElementById('audioPopup');
+
+    function startTimer() {
+      timerId = setInterval(() => {
+        seconds--;
+        if (countdownEl) countdownEl.innerText = seconds;
+        if (seconds <= 0) {
+          clearInterval(timerId);
+          minimizeToTray();
+        }
+      }, 1000);
+    }
+
+    function stopTimer() {
+      if (timerId) clearInterval(timerId);
+      const timerInfo = document.querySelector('.timer-info');
+      if (timerInfo) timerInfo.innerHTML = '<span style="color:#a0aec0">Timer bloccato. Scegli le opzioni e conferma.</span>';
+    }
+
+    function minimizeToTray() {
+      if (timerId) clearInterval(timerId);
+      popupEl.classList.add('hidden');
+    }
+
+    function restorePopup() {
+      popupEl.classList.remove('hidden');
+    }
+
+    // Richiesta permessi dispositivi reali se supportata dal browser
+    if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+      navigator.mediaDevices.enumerateDevices().then(devices => {
+        const inputSelect = document.getElementById('inputDevice');
+        const outputSelect = document.getElementById('outputDevice');
+        
+        const inputs = devices.filter(d => d.kind === 'audioinput');
+        const outputs = devices.filter(d => d.kind === 'audiooutput');
+
+        if (inputs.length > 0) {
+          inputSelect.innerHTML = '';
+          inputs.forEach((d, i) => {
+            const opt = document.createElement('option');
+            opt.value = d.deviceId;
+            opt.innerText = d.label || `Microfono ${i + 1}`;
+            inputSelect.appendChild(opt);
+          });
+        }
+
+        if (outputs.length > 0) {
+          outputSelect.innerHTML = '';
+          outputs.forEach((d, i) => {
+            const opt = document.createElement('option');
+            opt.value = d.deviceId;
+            opt.innerText = d.label || `Altoparlanti ${i + 1}`;
+            outputSelect.appendChild(opt);
+          });
+        }
+      }).catch(() => {});
+    }
+
+    startTimer();
+  </script>
+</body>
+</html>
