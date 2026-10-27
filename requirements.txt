@@ -1,0 +1,4 @@
+in cmd:
+pip install PyQt6 sounddevice pyinstaller
+then in cmd same folder of audiopopup.py:
+pyinstaller --noconsole --onefile audio_popup.py
